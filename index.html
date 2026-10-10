@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Mathematics of you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#1a0f1c; --panel:#2a1830; --line:#ff6f91; --muted:#b79aaa; --text:#fbeff4; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Work Sans", system-ui, sans-serif; display: flex; flex-direction: column; }
+  header { text-align: center; padding: 20px 16px 4px; }
+  h1 { font-family: Pacifico, "Brush Script MT", cursive; font-weight: 400; font-size: clamp(1.5rem, 4.5vw, 2.2rem); margin: 0; }
+  .sub { color: var(--muted); font-size: .9rem; margin: 8px 0 0; }
+  main { flex: 1; min-height: 0; position: relative; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  form { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: end; padding: 12px 16px 22px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); }
+  input { background: var(--panel); color: var(--text); border: 1px solid #4a2c52; border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 1rem; width: 110px; }
+  input#name { width: 210px; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--line); outline-offset: 2px; }
+  button { background: var(--line); color: #2a0b16; border: 0; border-radius: 8px; padding: 11px 20px; font: inherit; font-weight: 500; cursor: pointer; }
+  button:hover { filter: brightness(1.08); }
+  #eq { text-align: center; padding: 8px 16px 0; color: var(--muted); font: italic .88rem/1.55 "Cambria Math", Georgia, serif; max-height: 5.4em; overflow-y: auto; }
+  #eq b { color: var(--text); font-weight: 400; }
+  #eq sup { font-size: .75em; }
+  /* BACKGROUND IMAGE: put your photo next to index.html and name it bg.jpg (or change the url below).
+     If the file is missing the page simply stays plain dark. */
+  :root { --bg-image: url('bg.jpg'); }
+  /* different image per page? uncomment and edit:
+  body[data-page="1"] { --bg-image: url('bg1.jpg'); }
+  body[data-page="2"] { --bg-image: url('bg2.jpg'); }
+  body[data-page="3"] { --bg-image: url('bg3.jpg'); } */
+  #gif { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; pointer-events: none; filter: brightness(.55); }
+  #music { position: fixed; left: 12px; bottom: 12px; z-index: 6; padding: 8px 14px; font-size: .85rem; background: rgba(42,24,48,.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  #wall { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+  /* frosted panels behind the drawing and the text */
+  main {
+    margin: 8px 16px 0; border-radius: 20px;
+    background: rgba(26,15,28,.5); border: 1px solid rgba(255,111,145,.22);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  #note {
+    margin: 12px auto 0; padding: 16px 26px; border-radius: 18px;
+    background: rgba(42,24,48,.62); border: 1px solid rgba(255,111,145,.22);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  #eq {
+    margin: 8px auto 0; max-width: 780px; padding: 10px 18px; border-radius: 14px;
+    background: rgba(42,24,48,.62); border: 1px solid rgba(255,111,145,.22);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  .sub { display: inline-block; padding: 5px 16px; border-radius: 999px; background: rgba(42,24,48,.55); }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1;
+    background: linear-gradient(rgba(26,15,28,.55), rgba(26,15,28,.82)), var(--bg-image) center / cover no-repeat;
+  }
+  body[data-page="1"] [data-pages]:not([data-pages~="1"]),
+  body[data-page="2"] [data-pages]:not([data-pages~="2"]),
+  body[data-page="3"] [data-pages]:not([data-pages~="3"]) { display: none; }
+  #note { text-align: center; padding: 6px 24px 0; max-width: 640px; margin: 0 auto; }
+  #note .lead { font-family: Pacifico, "Brush Script MT", cursive; font-size: clamp(1.1rem, 3.2vw, 1.5rem); margin: 0 0 8px; }
+  #note p { margin: 0; color: var(--muted); line-height: 1.65; font-size: .98rem; }
+  .nav { display: flex; justify-content: center; padding: 14px 16px 22px; }
+  button.alt { background: var(--panel); color: var(--text); border: 1px solid #4a2c52; }
+  form#f { padding-bottom: 6px; }
+  form#f2 { padding-top: 0; }
+  button:disabled { opacity: .6; cursor: wait; }
+</style>
+</head>
+<body data-page="1">
+  <canvas id="wall" aria-hidden="true"></canvas>
+  <img id="gif" alt="" hidden>
+  <audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+  <button id="music" class="alt" type="button" aria-pressed="false">♪ Play music</button>
+  <header>
+    <h1>The Mathematics of you</h1>
+    <p class="sub" id="sub" data-pages="3">Write something and a fourier transform will write it for you</p>
+  </header>
+
+  <main><canvas id="c" aria-label="A name being drawn by rotating circles"></canvas></main>
+
+  <div id="note" data-pages="1">
+    <p class="lead">There is mathematics inside all of us.</p>
+    <p>It beats in your heart and winds through every strand of your DNA. Out of every pattern it could have drawn, it drew you, and there is no one else like you.</p>
+  </div>
+
+  <div id="eq" aria-live="polite" data-pages="3"></div>
+
+  <div class="nav" data-pages="1 2"><button id="next" type="button">Next</button></div>
+
+  <form id="f" data-pages="3">
+    <label>message
+      <input id="name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. chuchu">
+    </label>
+    <label>Circles
+      <input id="n" type="number" min="1" max="1000" value="300" inputmode="numeric">
+    </label>
+    <button id="go" type="submit">Draw</button>
+  </form>
+
+  <form id="f2" data-pages="3">
+    <label>number
+      <input id="seed" type="number" step="1" placeholder="e.g. 214" inputmode="numeric">
+    </label>
+    <button id="mk" type="submit">Make figure</button>
+    <button id="rnd" type="button" class="alt">Surprise me</button>
+  </form>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const M = 2048;   // samples along the path
+  const F = 720;    // frames per full drawing (~12s)
+  const cosT = new Float64Array(M), sinT = new Float64Array(M);
+  for (let i = 0; i < M; i++) { cosT[i] = Math.cos(2 * Math.PI * i / M); sinT[i] = Math.sin(2 * Math.PI * i / M); }
+
+  // ---------- Fourier transform of a closed path ----------
+  function buildShape(p) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const q of p) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    const xs = p.map(q => q.x - cx), ys = p.map(q => q.y - cy);
+    const arms = [];
+    for (let k = 0; k < M; k++) {
+      let re = 0, im = 0;
+      for (let n = 0; n < M; n++) {
+        const c = cosT[(k * n) % M], s = sinT[(k * n) % M];
+        re += xs[n] * c + ys[n] * s;
+        im += ys[n] * c - xs[n] * s;
+      }
+      re /= M; im /= M;
+      arms.push({ freq: k > M / 2 ? k - M : k, amp: Math.hypot(re, im), phase: Math.atan2(im, re) });
+    }
+    arms.sort((a, b) => b.amp - a.amp);
+    const jump = new Uint8Array(M);
+    p.forEach((q, i) => { jump[i] = q.jump ? 1 : 0; });
+    return { arms, jump, w: x1 - x0, h: y1 - y0 };
+  }
+
+  // ---------- Path sources ----------
+  function heartPoints() {
+    const p = [];
+    for (let i = 0; i < M; i++) {
+      const t = i / M * Math.PI * 2;
+      p.push({
+        x: 16 * Math.pow(Math.sin(t), 3),
+        y: -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))
+      });
+    }
+    return p;
+  }
+
+  // Same number -> same figure. Four families, picked and tuned by the number.
+  function rng(seed) {
+    let a = (Math.imul(seed | 0, 2654435761) ^ 0x9E3779B9) >>> 0;
+    const next = () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = 0; i < 8; i++) next();
+    return next;
+  }
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+
+  function figurePoints(seed) {
+    const r = rng(seed), pick = (lo, hi) => lo + Math.floor(r() * (hi - lo + 1));
+    const kind = pick(0, 3), p = [];
+    if (kind === 0) {            // rose
+      const d = pick(1, 3), n0 = pick(2, 9), g = gcd(n0, d), n = n0 / g, dd = d / g, k = n / dd;
+      for (let i = 0; i < M; i++) {
+        const t = i / M * Math.PI * 2 * dd, rad = Math.cos(k * t);
+        p.push({ x: rad * Math.cos(t), y: rad * Math.sin(t) });
+      }
+    } else if (kind === 1) {     // spirograph
+      const R = pick(5, 12), rr = pick(2, R - 1), d = rr * (0.5 + r() * 0.8), turns = rr / gcd(R, rr);
+      for (let i = 0; i < M; i++) {
+        const t = i / M * Math.PI * 2 * turns;
+        p.push({ x: (R - rr) * Math.cos(t) + d * Math.cos((R - rr) / rr * t),
+                 y: (R - rr) * Math.sin(t) - d * Math.sin((R - rr) / rr * t) });
+      }
+    } else if (kind === 2) {     // flower / star
+      const m = pick(3, 9), n = pick(2, 12), a = 0.25 + r() * 0.5, b = r() * 0.35, ph = r() * 6.28;
+      for (let i = 0; i < M; i++) {
+        const t = i / M * Math.PI * 2, rad = 1 + a * Math.cos(m * t) + b * Math.cos(n * t + ph);
+        p.push({ x: rad * Math.cos(t), y: rad * Math.sin(t) });
+      }
+    } else {                     // smooth random blob
+      const hs = [];
+      for (let k = 1; k <= pick(3, 6); k++) hs.push({ k: k + (r() < 0.5 ? 0 : -2 * k), amp: 1 / Math.pow(k, 1.1) * (0.4 + r()), ph: r() * 6.28 });
+      for (let i = 0; i < M; i++) {
+        const t = i / M * Math.PI * 2; let x = 0, y = 0;
+        hs.forEach(h => { x += h.amp * Math.cos(h.k * t + h.ph); y += h.amp * Math.sin(h.k * t + h.ph); });
+        p.push({ x, y });
+      }
+    }
+    return p;
+  }
+
+  // Double helix: down one strand, across each rung and back, then up the other strand
+  function dnaPoints() {
+    const turns = 3, len = 36, a = 6, S = 600, pl = [];
+    const X = u => (u - 0.5) * len, Y = u => a * Math.sin(Math.PI * 2 * turns * u);
+    const rung = new Set();
+    for (let j = 0; j < 2 * turns; j++) rung.add(Math.round((j + 0.5) / (2 * turns) * S));
+    for (let s = 0; s <= S; s++) {
+      const u = s / S;
+      pl.push([X(u), Y(u)]);
+      if (rung.has(s)) { pl.push([X(u), -Y(u)]); pl.push([X(u), Y(u)]); }
+    }
+    for (let s = S; s >= 0; s--) { const u = s / S; pl.push([X(u), -Y(u)]); }
+    const seg = [0];
+    for (let i = 1; i < pl.length; i++) seg.push(seg[i - 1] + Math.hypot(pl[i][0] - pl[i - 1][0], pl[i][1] - pl[i - 1][1]));
+    const L = seg[seg.length - 1] + Math.hypot(pl[0][0] - pl[pl.length - 1][0], pl[0][1] - pl[pl.length - 1][1]);
+    const out = [];
+    let j = 0;
+    for (let i = 0; i < M; i++) {
+      const t = i * L / M;
+      while (j < pl.length - 2 && seg[j + 1] < t) j++;
+      const f = seg[j + 1] > seg[j] ? Math.min(1, (t - seg[j]) / (seg[j + 1] - seg[j])) : 0;
+      out.push({ x: pl[j][0] + (pl[j + 1][0] - pl[j][0]) * f, y: pl[j][1] + (pl[j + 1][1] - pl[j][1]) * f });
+    }
+    return out;
+  }
+
+  // Render text, find its outline pixels, chain them into one closed path
+  async function textPoints(text) {
+    const font = 'Pacifico, "Brush Script MT", cursive';
+    try { await document.fonts.load('120px Pacifico', text); } catch (e) {}
+    const lines = text.split('|');
+    let size = 140;
+    const m = document.createElement('canvas').getContext('2d');
+    m.font = size + 'px ' + font;
+    const tw = Math.max(...lines.map(l => m.measureText(l).width));
+    if (tw > 1100) size = Math.floor(size * 1100 / tw);
+    const pad = Math.ceil(size * 0.35), lh = Math.ceil(size * 1.7);
+    const W = Math.ceil(Math.min(tw, 1100)) + pad * 2, H = lh * lines.length + pad * 2;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    c.font = size + 'px ' + font; c.textBaseline = 'middle'; c.textAlign = 'center';
+    lines.forEach((l, i) => c.fillText(l, W / 2, pad + lh * (i + 0.5)));
+    const d = c.getImageData(0, 0, W, H).data;
+    const on = (x, y) => x >= 0 && y >= 0 && x < W && y < H && d[(y * W + x) * 4 + 3] > 127;
+
+    const ex = [], ey = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (on(x, y) && !(on(x - 1, y) && on(x + 1, y) && on(x, y - 1) && on(x, y + 1))) { ex.push(x); ey.push(y); }
+    }
+    const n = ex.length;
+    if (n < 20) return null;
+
+    // group edge pixels into closed contours (8-connected components)
+    const idx = new Int32Array(W * H).fill(-1);
+    for (let i = 0; i < n; i++) idx[ey[i] * W + ex[i]] = i;
+    const comp = new Int32Array(n).fill(-1);
+    const contours = [];
+    for (let s = 0; s < n; s++) {
+      if (comp[s] >= 0) continue;
+      const members = [s]; comp[s] = contours.length;
+      for (let q = 0; q < members.length; q++) {
+        const i = members[q];
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const x = ex[i] + dx, y = ey[i] + dy;
+          if (x < 0 || y < 0 || x >= W || y >= H) continue;
+          const j = idx[y * W + x];
+          if (j >= 0 && comp[j] < 0) { comp[j] = contours.length; members.push(j); }
+        }
+      }
+      if (members.length >= 12) contours.push(members);
+    }
+    if (!contours.length) return null;
+
+    // walk each contour pixel by pixel (nearest unused neighbour), then return to its start
+    const walked = contours.map(members => {
+      const cells = new Map();
+      members.forEach(i => { const k = Math.floor(ey[i] / 3) * 100000 + Math.floor(ex[i] / 3); (cells.get(k) || cells.set(k, []).get(k)).push(i); });
+      const used = new Set();
+      let cur = members[0];
+      for (const i of members) if (ex[i] < ex[cur]) cur = i;
+      const start = cur, path = [cur]; used.add(cur);
+      for (let left = members.length - 1; left > 0; left--) {
+        let best = -1, bd = Infinity;
+        const gx = Math.floor(ex[cur] / 3), gy = Math.floor(ey[cur] / 3);
+        for (let r = 1; r <= 3 && best < 0; r++)
+          for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+            const list = cells.get((gy + dy) * 100000 + gx + dx);
+            if (!list) continue;
+            for (const i of list) {
+              if (used.has(i)) continue;
+              const dd = (ex[i] - ex[cur]) ** 2 + (ey[i] - ey[cur]) ** 2;
+              if (dd < bd) { bd = dd; best = i; }
+            }
+          }
+        if (best < 0) {
+          for (const i of members) {
+            if (used.has(i)) continue;
+            const dd = (ex[i] - ex[cur]) ** 2 + (ey[i] - ey[cur]) ** 2;
+            if (dd < bd) { bd = dd; best = i; }
+          }
+        }
+        used.add(best); path.push(best); cur = best;
+      }
+      path.push(start);
+      const meanY = members.reduce((a, i) => a + ey[i], 0) / members.length;
+      return { path, minX: Math.min(...members.map(i => ex[i])), line: Math.max(0, Math.min(lines.length - 1, Math.floor((meanY - pad) / lh))) };
+    });
+    walked.sort((a, b) => a.line - b.line || a.minX - b.minX); // line by line, left to right
+
+    const px = [], py = [], ends = new Set();
+    walked.forEach(c => { c.path.forEach(i => { px.push(ex[i]); py.push(ey[i]); }); ends.add(px.length - 1); });
+    const total = px.length;
+
+    // resample to M evenly spaced points along the closed path
+    const seg = [];
+    let L = 0;
+    for (let i = 0; i < total; i++) {
+      const j = (i + 1) % total;
+      const l = Math.hypot(px[j] - px[i], py[j] - py[i]);
+      seg.push(l); L += l;
+    }
+    const out = [];
+    let j = 0, acc = 0;
+    for (let i = 0; i < M; i++) {
+      const target = i * L / M;
+      while (j < total - 1 && acc + seg[j] < target) { acc += seg[j]; j++; }
+      const k = (j + 1) % total;
+      const f = seg[j] ? (target - acc) / seg[j] : 0;
+      out.push({ x: px[j] + (px[k] - px[j]) * f, y: py[j] + (py[k] - py[j]) * f, jump: ends.has(j) || seg[j] > 8 });
+    }
+    return out;
+  }
+
+  // ---------- Drawing ----------
+  const TAU = Math.PI * 2;
+  const DEFAULT_SUB = 'Write something and a fourier transform will write it for you';
+  let shape, count = 300, time = 0, trail = [], raf = null, timer = null, once = null, animating = false;
+  let w = 0, h = 0, scale = 1, token = 0, page = 0, eqOn = false;
+
+  function resize() {
+    const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    w = r.width; h = r.height;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (shape) scale = 0.8 * Math.min(w / shape.w, h / shape.h);
+  }
+
+  // pen is up while the path is travelling between letters
+  const penAt = t => !shape.jump[Math.floor(((t / TAU) % 1) * M) % M];
+
+  function epicycles(t, draw) {
+    let x = 0, y = 0;
+    const ox = w / 2, oy = h / 2;
+    for (let i = 0; i < count && i < shape.arms.length; i++) {
+      const { freq, amp, phase } = shape.arms[i];
+      const px = x, py = y;
+      x += amp * Math.cos(freq * t + phase);
+      y += amp * Math.sin(freq * t + phase);
+      if (draw && i < 80 && freq !== 0 && amp * scale > 0.6) {
+        ctx.strokeStyle = 'rgba(243,217,227,.22)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(ox + px * scale, oy + py * scale, amp * scale, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = 'rgba(243,217,227,.6)';
+        ctx.beginPath(); ctx.moveTo(ox + px * scale, oy + py * scale); ctx.lineTo(ox + x * scale, oy + y * scale); ctx.stroke();
+      }
+    }
+    return { x, y };
+  }
+
+  function drawTrail() {
+    if (trail.length < 2) return;
+    ctx.strokeStyle = '#ff6f91'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.shadowColor = 'rgba(255,111,145,.6)'; ctx.shadowBlur = 8;
+    ctx.beginPath();
+    trail.forEach((p, i) => {
+      const sx = w / 2 + p.x * scale, sy = h / 2 + p.y * scale;
+      if (i && p.pen) ctx.lineTo(sx, sy); else ctx.moveTo(sx, sy);
+    });
+    ctx.stroke(); ctx.shadowBlur = 0;
+  }
+
+  // Print the equation of the circles currently drawing the shape
+  function showEquation() {
+    const used = Math.min(count, shape.arms.length), show = Math.min(4, used);
+    const size = Math.max(shape.w, shape.h);
+    const num = v => (v < 0 ? '\u2212' : '+') + ' ' + Math.abs(v).toFixed(2);
+    const terms = [];
+    for (let i = 0; i < show; i++) {
+      const { freq, amp, phase } = shape.arms[i];
+      const k = freq === 0 ? '' : (freq === 1 ? 't' : freq === -1 ? '\u2212t' : freq + 't');
+      const exp = k ? 'i(' + k + ' ' + num(phase) + ')' : 'i(' + phase.toFixed(2) + ')';
+      terms.push('<b>' + (amp / size).toFixed(3) + '</b>\u00b7e<sup>' + exp + '</sup>');
+    }
+    const more = used > show ? ' + \u2026 (' + (used - show) + (used - show === 1 ? ' more circle)' : ' more circles)') : '';
+    document.getElementById('eq').innerHTML =
+      'z(t) = x(t) + i\u00b7y(t) = \u03a3 c<sub>k</sub>\u00b7e<sup>i\u00b7k\u00b7t</sup> = ' + terms.join(' + ') + more +
+      '<br>' + used + ' circles, biggest first, for 0 \u2264 t \u2264 2\u03c0 (size scaled to 1)';
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    const tip = epicycles(time, true);
+    tip.pen = penAt(time);
+    trail.push(tip);
+    if (trail.length > shape.F + 1) trail.shift();
+    drawTrail();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(w / 2 + tip.x * scale, h / 2 + tip.y * scale, 3.5, 0, TAU); ctx.fill();
+    time += TAU / shape.F;
+    if (once && time >= TAU) { finish(); return; }
+    raf = requestAnimationFrame(frame);
+  }
+
+  // one full drawing is done: show the finished line (no circles), then hand over after the hold
+  function finish() {
+    animating = false;
+    ctx.clearRect(0, 0, w, h); drawTrail();
+    const o = once; once = null;
+    timer = setTimeout(o.done, o.hold);
+  }
+
+  // o = { hold, done } draws once then calls done; no o = loops forever
+  function play(o) {
+    cancelAnimationFrame(raf); clearTimeout(timer);
+    time = 0; trail = []; once = o || null;
+    resize();
+    if (eqOn) showEquation();
+    if (reduceMotion) {
+      for (let i = 0; i <= shape.F; i++) { const t = i / shape.F * TAU, p = epicycles(t, false); p.pen = penAt(t); trail.push(p); }
+      animating = false;
+      ctx.clearRect(0, 0, w, h); drawTrail();
+      if (once) { const d = once; once = null; timer = setTimeout(d.done, d.hold); }
+    } else { animating = true; frame(); }
+  }
+
+  // ---------- Page 3: message and number ----------
+  async function start(text, n) {
+    const my = ++token;
+    document.getElementById('sub').textContent = DEFAULT_SUB;
+    count = Math.max(1, Math.min(1000, Math.round(n) || 1));
+    const btn = document.getElementById('go'); btn.disabled = true;
+    let pts = text ? await textPoints(text) : null;
+    const isText = !!pts;
+    if (!pts) pts = heartPoints();
+    const s = buildShape(pts);
+    s.F = isText ? 960 : 720;   // messages draw at 0.75x speed
+    if (my !== token) return;
+    shape = s; btn.disabled = false;
+    play();
+  }
+
+  function startFigure(seed, n) {
+    token++;
+    count = Math.max(1, Math.min(1000, Math.round(n) || 1));
+    shape = buildShape(figurePoints(seed));
+    shape.F = 720;
+    document.getElementById('sub').textContent = 'Figure #' + seed;
+    play();
+  }
+
+  // ---------- Background music (music.mp3, looped) ----------
+  const bgm = document.getElementById('bgm'), musicBtn = document.getElementById('music');
+  let userPaused = false;
+  bgm.volume = 0.55;
+  const setMusicUI = on => { musicBtn.textContent = on ? '\u266a Music on' : '\u266a Play music'; musicBtn.setAttribute('aria-pressed', on); };
+  bgm.addEventListener('play', () => setMusicUI(true));
+  bgm.addEventListener('pause', () => setMusicUI(fal));
+  bgm.addEventListener('error', () => { musicBtn.hidden = true; });   // no music.mp3 next to the page: hide the button
+
+  musicBtn.addEventListener('click', () => {
+    if (bgm.paused) { userPaused = false; bgm.play().catch(() => {}); }
+    else { userPaused = true; bgm.pause(); }
+  });
+  // browsers only allow sound after a tap, so the first tap anywhere starts the music
+  const firstTap = e => {
+    if (e.target.closest('#music') || userPaused) return;
+    bgm.play().then(() => document.removeEventListener('pointerdown', firstTap)).catch(() => {});
+  };
+  document.addEventListener('pointerdown', firstTap);
+
+  // ---------- Gif wallpaper ----------
+  // Which gif is the wallpaper on which page. Files sit next to index.html.
+  // Use '' for a page to get the drifting hearts instead. A missing file also falls back to the hearts.
+  const GIFS = { 1: 'drop.gif', 2: 'drop.gif', 3: 'drop.gif' };
+  function showGif(p) {
+    const g = document.getElementById('gif'), src = GIFS[p];
+    if (!src) { g.hidden = true; startWall(); return; }
+    if (g.getAttribute('src') === src && g.complete && g.naturalWidth) { g.hidden = false; stopWall(); return; }
+    g.hidden = true;
+    g.onload = () => { g.hidden = false; stopWall(); };
+    g.onerror = () => { g.hidden = true; startWall(); };
+    g.src = src;
+  }
+
+  // ---------- Live wallpaper (all pages) ----------
+  const wall = document.getElementById('wall'), wctx = wall.getContext('2d');
+  let wallRaf = null, bits = [], wallOn = false;
+  function wallResize() {
+    const dpr = window.devicePixelRatio || 1;
+    wall.width = innerWidth * dpr; wall.height = innerHeight * dpr;
+    wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function makeBits() {
+    bits = Array.from({ length: 36 }, () => ({
+      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+      s: 8 + Math.random() * 26, v: 0.15 + Math.random() * 0.45, sway: 10 + Math.random() * 30,
+      ph: Math.random() * TAU, rot: (Math.random() - 0.5) * 0.012, a: Math.random() * TAU,
+      kind: Math.floor(Math.random() * 3), al: 0.1 + Math.random() * 0.22
+    }));
+  }
+  function wallFrame(t, loop) {
+    wctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const b of bits) {
+      b.y -= b.v; b.a += b.rot;
+      if (b.y < -50) { b.y = innerHeight + 50; b.x = Math.random() * innerWidth; }
+      const x = b.x + Math.sin(t / 1800 + b.ph) * b.sway;
+      wctx.save(); wctx.translate(x, b.y); wctx.rotate(b.a);
+      if (b.kind === 0) {            // heart
+        const s = b.s;
+        wctx.fillStyle = 'rgba(255,111,145,' + b.al + ')';
+        wctx.beginPath(); wctx.moveTo(0, s * 0.3);
+        wctx.bezierCurveTo(-s * 0.6, -s * 0.2, -s * 0.3, -s * 0.7, 0, -s * 0.35);
+        wctx.bezierCurveTo(s * 0.3, -s * 0.7, s * 0.6, -s * 0.2, 0, s * 0.3);
+        wctx.fill();
+      } else if (b.kind === 1) {     // ring
+        wctx.strokeStyle = 'rgba(214,190,255,' + b.al * 1.3 + ')'; wctx.lineWidth = 1.5;
+        wctx.beginPath(); wctx.arc(0, 0, b.s * 0.5, 0, TAU); wctx.stroke();
+      } else {                       // glowing dot
+        wctx.fillStyle = 'rgba(255,230,240,' + b.al * 1.6 + ')';
+        wctx.shadowColor = 'rgba(255,170,200,.8)'; wctx.shadowBlur = 10;
+        wctx.beginPath(); wctx.arc(0, 0, b.s * 0.12 + 1, 0, TAU); wctx.fill();
+      }
+      wctx.restore();
+    }
+    if (loop) wallRaf = requestAnimationFrame(tt => wallFrame(tt, true));
+  }
+  function startWall() {
+    if (wallOn) return;
+    wallOn = true;
+    wallResize(); makeBits();
+    if (reduceMotion) wallFrame(0, false); else wallRaf = requestAnimationFrame(tt => wallFrame(tt, true));
+  }
+  function stopWall() { wallOn = false; cancelAnimationFrame(wallRaf); wctx.clearRect(0, 0, innerWidth, innerHeight); }
+
+  // ---------- Pages 1 and 2: timed sequences ----------
+  const P1 = [
+    { pts: heartPoints, count: 250, F: 720, hold: 1800 },
+    { pts: dnaPoints, count: 250, F: 720, hold: 1800 }
+  ];
+  const P2 = ['Happy Birthday|Babu', 'This project is|what makes you', 'well', 'you']
+    .map(text => ({ text, count: 500, F: 960, hold: 1800 }));
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  async function runSeq(items, loop) {
+    const my = ++token;
+    let i = 0;
+    while (my === token) {
+      const it = items[i];
+      let pts = it.text ? await textPoints(it.text) : it.pts();
+      if (!pts) pts = heartPoints();
+      const s = buildShape(pts);
+      if (my !== token) return;
+      s.F = it.F; shape = s; count = it.count;
+      await new Promise(res => play({ hold: it.hold, done: res }));
+      if (my !== token) return;
+      i++;
+      if (i >= items.length) { if (!loop) return; i = 0; }
+      ctx.clearRect(0, 0, w, h);
+      await wait(400);
+    }
+  }
+
+  function goTo(p) {
+    page = p; token++;
+    cancelAnimationFrame(raf); clearTimeout(timer); once = null; animating = false;
+    document.body.dataset.page = p;
+    showGif(p);
+    eqOn = p === 3;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (p === 1) runSeq(P1, true);
+    else if (p === 2) runSeq(P2, false);
+    else start('', 300);   // opens on a heart until a message is typed
+  }
+
+  document.getElementById('f').addEventListener('submit', e => {
+    e.preventDefault();
+    start(document.getElementById('name').value.trim(), parseInt(document.getElementById('n').value, 10));
+  });
+  const circles = () => parseInt(document.getElementById('n').value, 10);
+  document.getElementById('f2').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = parseInt(document.getElementById('seed').value, 10);
+    startFigure(Number.isFinite(v) ? v : 0, circles());
+  });
+  document.getElementById('rnd').addEventListener('click', () => {
+    const v = Math.floor(Math.random() * 100000);
+    document.getElementById('seed').value = v;
+    startFigure(v, circles());
+  });
+  document.getElementById('next').addEventListener('click', () => goTo(page + 1));
+  window.addEventListener('resize', () => {
+    wallResize(); makeBits();
+    if (!shape) return;
+    if (page === 3) { play(); return; }
+    resize();
+    if (!animating) { ctx.clearRect(0, 0, w, h); drawTrail(); }
+  });
+
+  goTo(1);
+})();
+</script>
+</body>
+</html>
