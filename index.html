@@ -84,8 +84,9 @@
   <main><canvas id="c" aria-label="A name being drawn by rotating circles"></canvas></main>
 
   <div id="note" data-pages="1">
-    <p class="lead">There is mathematics inside all of us.</p>
-    <p>It beats in your heart and winds through every strand of your DNA. Out of every pattern it could have drawn, it drew you, and there is no one else like you.</p>
+    <p class="lead">There is mathematics inside you - Yours Truly.</p>
+    <p>It beats in your heart and winds through every strand of your DNA. Out of every pattern it could have drawn, out of every A G T C combination it could have written
+        it drew you, and it wrote you, like a song played on the strings of DNA , like a pattern of precise mathematics found on the spiral of a flower. Like every snowflake and every genome, you are unique and there is no one else like you.</p>
   </div>
 
   <div id="eq" aria-live="polite" data-pages="3"></div>
@@ -97,7 +98,7 @@
       <input id="name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. chuchu">
     </label>
     <label>Circles
-      <input id="n" type="number" min="1" max="1000" value="300" inputmode="numeric">
+      <input id="n" type="number" min="1" max="10000" value="300" inputmode="numeric">
     </label>
     <button id="go" type="submit">Draw</button>
   </form>
@@ -339,7 +340,7 @@
 
   // ---------- Drawing ----------
   const TAU = Math.PI * 2;
-  const DEFAULT_SUB = 'Write something and a fourier transform will write it for you';
+  const DEFAULT_SUB = '1) Write a message and my fourier writer will write it \n 2) Write a random number and see a random pattern generate';
   let shape, count = 300, time = 0, trail = [], raf = null, timer = null, once = null, animating = false;
   let w = 0, h = 0, scale = 1, token = 0, page = 0, eqOn = false;
 
@@ -552,8 +553,8 @@
     { pts: heartPoints, count: 250, F: 720, hold: 1800 },
     { pts: dnaPoints, count: 250, F: 720, hold: 1800 }
   ];
-  const P2 = ['Happy Birthday|Babu', 'This project is|what makes you', 'well', 'you']
-    .map(text => ({ text, count: 500, F: 960, hold: 1800 }));
+  const P2 = ['Happy Birthday|Babu', 'I build this project', 'to show you', 'Math is beautiful', 'And so are you..']
+    .map(text => ({ text, count: 1000, F: 960, hold: 1800 }));
   const wait = ms => new Promise(r => setTimeout(r, ms));
 
   async function runSeq(items, loop) {
