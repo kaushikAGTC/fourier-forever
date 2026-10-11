@@ -15,7 +15,19 @@
   header { text-align: center; padding: 20px 16px 4px; }
   h1 { font-family: Pacifico, "Brush Script MT", cursive; font-weight: 400; font-size: clamp(1.5rem, 4.5vw, 2.2rem); margin: 0; }
   .sub { color: var(--muted); font-size: .9rem; margin: 8px 0 0; }
-  main { flex: 1; min-height: 0; position: relative; }
+  
+main {
+    flex: 1 1 0;
+    min-height: 180px;
+    position: relative;
+    margin: 8px 16px 0;
+    border-radius: 20px;
+    background: rgba(26,15,28,.5);
+    border: 1px solid rgba(255,111,145,.22);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   form { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: end; padding: 12px 16px 22px; }
   label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); }
@@ -43,11 +55,47 @@
     background: rgba(26,15,28,.5); border: 1px solid rgba(255,111,145,.22);
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
-  #note {
-    margin: 12px auto 0; padding: 16px 26px; border-radius: 18px;
-    background: rgba(42,24,48,.62); border: 1px solid rgba(255,111,145,.22);
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  }
+
+#note {
+    width: calc(100% - 32px);
+    max-width: 1100px;
+    box-sizing: border-box;
+    margin: 12px auto 0;
+    padding: 12px 28px;
+    border-radius: 18px;
+    text-align: center;
+    background: rgba(42,24,48,.62);
+    border: 1px solid rgba(255,111,145,.22);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+#note .lead {
+    font-family: Pacifico, "Brush Script MT", cursive;
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    margin: 0 0 6px;
+}
+
+#note p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.45;
+    font-size: clamp(.82rem, 1.1vw, .95rem);
+}
+
+@media (max-width: 600px) {
+    #note {
+        width: calc(100% - 20px);
+        padding: 10px 14px;
+        margin-top: 8px;
+    }
+
+    #note p {
+        line-height: 1.4;
+        font-size: .82rem;
+    }
+}
+
   #eq {
     margin: 8px auto 0; max-width: 780px; padding: 10px 18px; border-radius: 14px;
     background: rgba(42,24,48,.62); border: 1px solid rgba(255,111,145,.22);
@@ -61,9 +109,7 @@
   body[data-page="1"] [data-pages]:not([data-pages~="1"]),
   body[data-page="2"] [data-pages]:not([data-pages~="2"]),
   body[data-page="3"] [data-pages]:not([data-pages~="3"]) { display: none; }
-  #note { text-align: center; padding: 6px 24px 0; max-width: 640px; margin: 0 auto; }
-  #note .lead { font-family: Pacifico, "Brush Script MT", cursive; font-size: clamp(1.1rem, 3.2vw, 1.5rem); margin: 0 0 8px; }
-  #note p { margin: 0; color: var(--muted); line-height: 1.65; font-size: .98rem; }
+  
   .nav { display: flex; justify-content: center; padding: 14px 16px 22px; }
   button.alt { background: var(--panel); color: var(--text); border: 1px solid #4a2c52; }
   form#f { padding-bottom: 6px; }
@@ -85,8 +131,7 @@
 
   <div id="note" data-pages="1">
     <p class="lead">There is mathematics inside you - Yours Truly.</p>
-    <p>It beats in your heart and winds through every strand of your DNA. Out of every pattern it could have drawn, out of every A G T C combination it could have written
-        it drew you, and it wrote you, like a song played on the strings of DNA , like a pattern of precise mathematics found on the spiral of a flower. Like every snowflake and every genome, you are unique and there is no one else like you.</p>
+    <p>It beats within your heart and winds through every strand of your DNA. Of all the patterns it could have drawn, of all the combinations of A, G, T, and C it could have written, it chose you. It composed you like a song played on the strings of DNA, like the precise mathematics hidden in the spiral of a flower. And just as no two snowflakes are perfectly alike, no two genomes are entirely identical. You are a singular arrangement of possibility, a pattern written once in the vast language of life. Among all the ways life could have unfolded, there is only one you.</p>
   </div>
 
   <div id="eq" aria-live="polite" data-pages="3"></div>
@@ -340,8 +385,42 @@
 
   // ---------- Drawing ----------
   const TAU = Math.PI * 2;
-  const DEFAULT_SUB = '1) Write a message and my fourier writer will write it \n 2) Write a random number and see a random pattern generate';
+  const DEFAULT_SUB = '1) Write a message and watch 1000+ circles write it for you or  Write a random number and see a random pattern emerge';
   let shape, count = 300, time = 0, trail = [], raf = null, timer = null, once = null, animating = false;
+  
+let currentCaption = '';
+
+const CAPTIONS = {
+    heart: [
+        'Every circle follows a rhythm. Together, they become something extraordinary. Enter something below and see the magic of Fourier transforms',
+        'Even a heart can emerge from the mathematics of motion. Enter something below and see the magic of Fourier transforms',
+        'Sometimes, the simplest patterns create the most beautiful things. Enter something below and see the magic of Fourier transforms',
+        'A thousand little movements. One beautiful whole. Enter something below and see the magic of Fourier transforms'
+    ],
+    text: [
+        'Every letter has a rhythm. Every word has a soul.',
+        'Mathematics gives shape to the words we cannot always express.',
+        'Some things are too beautiful to be described by numbers alone.',
+        'A pattern becomes a message. A message becomes a memory.'
+    ],
+    figure: [
+        'From simple motion, extraordinary patterns emerge.',
+        'Order hides in places that look like chaos.',
+        'Every number holds the possibility of a different world.',
+        'No two journeys need to follow the same pattern.'
+    ]
+};
+
+const captionIndex = { heart: 0, text: 0, figure: 0 };
+
+function setCaption(kind) {
+    const captions = CAPTIONS[kind];
+    currentCaption =
+        captions[captionIndex[kind] % captions.length];
+
+    captionIndex[kind]++;
+}
+
   let w = 0, h = 0, scale = 1, token = 0, page = 0, eqOn = false;
 
   function resize() {
@@ -386,22 +465,11 @@
   }
 
   // Print the equation of the circles currently drawing the shape
-  function showEquation() {
-    const used = Math.min(count, shape.arms.length), show = Math.min(4, used);
-    const size = Math.max(shape.w, shape.h);
-    const num = v => (v < 0 ? '\u2212' : '+') + ' ' + Math.abs(v).toFixed(2);
-    const terms = [];
-    for (let i = 0; i < show; i++) {
-      const { freq, amp, phase } = shape.arms[i];
-      const k = freq === 0 ? '' : (freq === 1 ? 't' : freq === -1 ? '\u2212t' : freq + 't');
-      const exp = k ? 'i(' + k + ' ' + num(phase) + ')' : 'i(' + phase.toFixed(2) + ')';
-      terms.push('<b>' + (amp / size).toFixed(3) + '</b>\u00b7e<sup>' + exp + '</sup>');
-    }
-    const more = used > show ? ' + \u2026 (' + (used - show) + (used - show === 1 ? ' more circle)' : ' more circles)') : '';
-    document.getElementById('eq').innerHTML =
-      'z(t) = x(t) + i\u00b7y(t) = \u03a3 c<sub>k</sub>\u00b7e<sup>i\u00b7k\u00b7t</sup> = ' + terms.join(' + ') + more +
-      '<br>' + used + ' circles, biggest first, for 0 \u2264 t \u2264 2\u03c0 (size scaled to 1)';
-  }
+
+function showEquation() {
+    document.getElementById('eq').textContent = currentCaption;
+}
+
 
   function frame() {
     ctx.clearRect(0, 0, w, h);
@@ -447,6 +515,7 @@
     const btn = document.getElementById('go'); btn.disabled = true;
     let pts = text ? await textPoints(text) : null;
     const isText = !!pts;
+    setCaption(isText ? 'text' : 'heart');
     if (!pts) pts = heartPoints();
     const s = buildShape(pts);
     s.F = isText ? 960 : 720;   // messages draw at 0.75x speed
@@ -455,14 +524,22 @@
     play();
   }
 
+
+
   function startFigure(seed, n) {
-    token++;
-    count = Math.max(1, Math.min(1000, Math.round(n) || 1));
-    shape = buildShape(figurePoints(seed));
-    shape.F = 720;
-    document.getElementById('sub').textContent = 'Figure #' + seed;
-    play();
+      token++;
+      count = Math.max(1, Math.min(1000, Math.round(n) || 1));
+
+      setCaption('figure');
+
+      shape = buildShape(figurePoints(seed));
+      shape.F = 720;
+
+      document.getElementById('sub').textContent = 'Figure #' + seed;
+      play();
   }
+
+  
 
   // ---------- Background music (music.mp3, looped) ----------
   const bgm = document.getElementById('bgm'), musicBtn = document.getElementById('music');
@@ -553,7 +630,7 @@
     { pts: heartPoints, count: 250, F: 720, hold: 1800 },
     { pts: dnaPoints, count: 250, F: 720, hold: 1800 }
   ];
-  const P2 = ['Happy Birthday|Babu', 'I build this project', 'to show you', 'Math is beautiful', 'And so are you..']
+  const P2 = ['Math is not limited | to patterns','It defines your existnece', 'This project', 'shows you', 'Maths is beautiful', 'And so are you...', 'You are my muse..','you are my inspiration..', 'Happy Birthday Babu']
     .map(text => ({ text, count: 1000, F: 960, hold: 1800 }));
   const wait = ms => new Promise(r => setTimeout(r, ms));
 
