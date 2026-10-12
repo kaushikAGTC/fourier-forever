@@ -6,7 +6,8 @@
 <title>The Mathematics of you</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root { --bg:#1a0f1c; --panel:#2a1830; --line:#ff6f91; --muted:#b79aaa; --text:#fbeff4; }
   * { box-sizing: border-box; }
@@ -71,7 +72,7 @@ main {
 }
 
 #note .lead {
-    font-family: Pacifico, "Brush Script MT", cursive;
+    font-family: "Dancing Script", cursive;
     font-size: clamp(1.1rem, 2.5vw, 1.5rem);
     margin: 0 0 6px;
 }
@@ -143,7 +144,7 @@ main {
       <input id="name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. chuchu">
     </label>
     <label>Circles
-      <input id="n" type="number" min="1" max="10000" value="300" inputmode="numeric">
+      <input id="n" type="number" min="1" max="10000" value="1000" inputmode="numeric">
     </label>
     <button id="go" type="submit">Draw</button>
   </form>
@@ -161,7 +162,7 @@ main {
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const M = 2048;   // samples along the path
+  const M = 4096;   // samples along the path
   const F = 720;    // frames per full drawing (~12s)
   const cosT = new Float64Array(M), sinT = new Float64Array(M);
   for (let i = 0; i < M; i++) { cosT[i] = Math.cos(2 * Math.PI * i / M); sinT[i] = Math.sin(2 * Math.PI * i / M); }
@@ -278,10 +279,16 @@ main {
 
   // Render text, find its outline pixels, chain them into one closed path
   async function textPoints(text) {
-    const font = 'Pacifico, "Brush Script MT", cursive';
-    try { await document.fonts.load('120px Pacifico', text); } catch (e) {}
+    
+   const font = '"Orbitron", sans-serif';
+
+    
+   try {
+     await document.fonts.load('700 120px Orbitron', text);
+    } catch (e) {}
+
     const lines = text.split('|');
-    let size = 140;
+    let size = 700;
     const m = document.createElement('canvas').getContext('2d');
     m.font = size + 'px ' + font;
     const tw = Math.max(...lines.map(l => m.measureText(l).width));
@@ -386,7 +393,7 @@ main {
   // ---------- Drawing ----------
   const TAU = Math.PI * 2;
   const DEFAULT_SUB = '1) Write a message and watch 1000+ circles write it for you or  Write a random number and see a random pattern emerge';
-  let shape, count = 300, time = 0, trail = [], raf = null, timer = null, once = null, animating = false;
+  let shape, count = 1000, time = 0, trail = [], raf = null, timer = null, once = null, animating = false;
   
 let currentCaption = '';
 
@@ -442,7 +449,7 @@ function setCaption(kind) {
       const px = x, py = y;
       x += amp * Math.cos(freq * t + phase);
       y += amp * Math.sin(freq * t + phase);
-      if (draw && i < 80 && freq !== 0 && amp * scale > 0.6) {
+      if (draw && i < 500 && freq !== 0 && amp * scale > 0.6) {
         ctx.strokeStyle = 'rgba(243,217,227,.22)'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(ox + px * scale, oy + py * scale, amp * scale, 0, TAU); ctx.stroke();
         ctx.strokeStyle = 'rgba(243,217,227,.6)';
@@ -564,7 +571,7 @@ function showEquation() {
   // ---------- Gif wallpaper ----------
   // Which gif is the wallpaper on which page. Files sit next to index.html.
   // Use '' for a page to get the drifting hearts instead. A missing file also falls back to the hearts.
-  const GIFS = { 1: 'drop.gif', 2: 'drop.gif', 3: 'drop.gif' };
+  const GIFS = { 1: '224617.gif', 2: '224616.gif', 3: 'drop.gif' };
   function showGif(p) {
     const g = document.getElementById('gif'), src = GIFS[p];
     if (!src) { g.hidden = true; startWall(); return; }
@@ -631,7 +638,7 @@ function showEquation() {
     { pts: dnaPoints, count: 250, F: 720, hold: 1800 }
   ];
   const P2 = ['Math is not limited | to patterns','It defines your existence', 'This project', 'shows you', 'Maths is beautiful', 'And so are you...', 'You are my muse..','you are my inspiration..', 'Happy Birthday Babu']
-    .map(text => ({ text, count: 1000, F: 960, hold: 1800 }));
+    .map(text => ({ text, count: 1800, F: 960, hold: 1800 }));
   const wait = ms => new Promise(r => setTimeout(r, ms));
 
   async function runSeq(items, loop) {
@@ -662,7 +669,7 @@ function showEquation() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (p === 1) runSeq(P1, true);
     else if (p === 2) runSeq(P2, false);
-    else start('', 300);   // opens on a heart until a message is typed
+    else start('', 50);   // opens on a heart until a message is typed
   }
 
   document.getElementById('f').addEventListener('submit', e => {
